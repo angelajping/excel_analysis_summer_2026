@@ -43,8 +43,6 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
                 f"Rows used: {rows_used}"
         )
 
-        #avg_Q_steady = df.loc[steady_mask, "Q"].mean()
-
         
         # THIS IS THE BACKWARDS UP WAY
         """
@@ -71,7 +69,7 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
         # shows which rows are marked true and false for steady state
         df["steady_state"] = False
         df.loc[steady_mask, "steady_state"] = True
-        #df.loc[start_idx:end_idx, "steady_state"] = True # for the backwards up way, this marks the steady state rows as true
+        """df.loc[start_idx:end_idx, "steady_state"] = True # for the backwards up way, this marks the steady state rows as true"""
         # writes avg Q of the steady state
         df["avg_Q_steady"] = None
         df.at[0, "avg_Q_steady"] = avg_Q_steady  
@@ -83,16 +81,30 @@ for i in range (15, 35, 5):
     INPUT_FOLDER = Path(f"NURBS IDX30/Final/Back_final_15_2_26/{i}gps")
     OUTPUT_FOLDER = Path(f"NURBS IDX30 PYTHON ANALYSIS/Back_final_15_2_26/{i}gps")
     OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
-    SUMMARY_FILE = Path(f"{OUTPUT_FOLDER}/Back_{i}gps_Analysis.xlsx")
+    SUMMARY_FILE = Path(f"{OUTPUT_FOLDER}/back_{i}gps_summary.xlsx")
     
+    summaries = []  # collect results for each mps file here
+
     # creating new files and saving them
     for xlsx_file in INPUT_FOLDER.glob("*.xlsx"):
         if xlsx_file.name.startswith("~$") or not xlsx_file.stem[0].isdigit():
                 continue
+
         result_df = process_file(xlsx_file)
+       
+        # extract velocity number from filename e.g. "3mps.xlsx" → 3
+        velocity = int(xlsx_file.stem.replace("mps", ""))
+        avg_Q = result_df.at[0, "avg_Q_steady"]
+        summaries.append({"Velocity (m/s)": velocity, "Q_steady (W)": avg_Q})
+
         output_file = OUTPUT_FOLDER / f"{xlsx_file.stem}_analysis.xlsx"
         result_df.to_excel(output_file, index=False)
         print(f"Saved: {output_file}")
+
+    # write summary file, sorted by velocity
+    summary_df = pd.DataFrame(summaries).sort_values("Velocity (m/s)").reset_index(drop=True)
+    summary_df.to_excel(SUMMARY_FILE, index=False)
+    print(f"Summary saved: {SUMMARY_FILE}")
 
 
 
