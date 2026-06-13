@@ -44,8 +44,14 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
         plt.show()
         
         # have user choose steady state range 
-        first_steady_idx = int(input(f"Enter the first row number of the steady state range for {xlsx_path.name}: "))
-        end_idx = int(input(f"Enter the END row number of steady state for {xlsx_path.name}: "))
+        first_steady_idx = None
+        end_idx = None
+        while first_steady_idx is None or not (0 <= first_steady_idx < len(df)):
+                first_steady_idx = int(input(f"Enter the first row number of the steady state range for {xlsx_path.name}: "))
+        while end_idx is None or end_idx <= first_steady_idx or end_idx >= len(df):
+                end_idx = int(input(f"Enter the END row number of steady state for {xlsx_path.name}: "))
+                if end_idx >= len(df):
+                        end_idx = len(df) - 1 # baby proofing! sets end_idx to last row if user enters a number that's too high
 
         # show graph again with selected region highlighted
         fig, ax = plt.subplots(figsize=(20, 4))

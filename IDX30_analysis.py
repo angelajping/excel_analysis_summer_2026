@@ -5,8 +5,8 @@ from analysis_code import process_file
 
 # this first section is for the Redo_front_4_24_26
 for i in range (15, 35, 5):
-    INPUT_FOLDER = Path(f"NURBS IDX11/Redo_front_4_24_26/{i}gps")
-    OUTPUT_FOLDER = Path(f"NURBS IDX11 PYTHON ANALYSIS/Redo_front_4_24_26/{i}gps")
+    INPUT_FOLDER = Path(f"NURBS IDX30/Redo_front_4_24_26/{i}gps")
+    OUTPUT_FOLDER = Path(f"NURBS IDX30 PYTHON ANALYSIS/Redo_front_4_24_26/{i}gps")
     OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
     SUMMARY_FILE = Path(f"{OUTPUT_FOLDER}/redo_front_{i}gps_summary.xlsx")
     
@@ -33,6 +33,9 @@ for i in range (15, 35, 5):
     summary_df = pd.DataFrame(summaries).sort_values("Velocity (m/s)").reset_index(drop=True)
     summary_df.to_excel(SUMMARY_FILE, index=False)
     print(f"Summary saved: {SUMMARY_FILE}")
+
+print("IDX30 Redo_front_4_24_26 analysis complete!")
+
 
 # this section is for the original back
 for i in range (15, 35, 5):
@@ -65,6 +68,9 @@ for i in range (15, 35, 5):
     summary_df.to_excel(SUMMARY_FILE, index=False)
     print(f"Summary saved: {SUMMARY_FILE}")
 
+print("IDX30 original back analysis complete!")
+
+
 # this section is for the original front
 for i in range (15, 35, 5):
     INPUT_FOLDER = Path(f"NURBS IDX30/Final/Front_final_15_2_26/{i}gps")
@@ -95,3 +101,5 @@ for i in range (15, 35, 5):
     summary_df = pd.DataFrame(summaries).sort_values("Velocity (m/s)").reset_index(drop=True)
     summary_df.to_excel(SUMMARY_FILE, index=False)
     print(f"Summary saved: {SUMMARY_FILE}")
+
+print("IDX30 original front analysis complete!")
