@@ -1,4 +1,4 @@
-import math
+import numpy as np
 import CoolProp as cp
 from CoolProp.CoolProp import PropsSI
 import pandas as pd
@@ -65,9 +65,10 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
         # NOW DO UNCERTAINTY PROPAGATION
         # 0.15+0.002*RTD_value is the uncertainty of each RTD reading and 0.01 is the uncertainty of the flow rate reading from the datasheets
         df["RTD_OUT_unc"] = 0.15 + 0.002 * df["RTD_OUT"]
-        df["RTD_unc"] = math.sqrt(df["RTD_IN_unc"]**2 + df["RTD_OUT_unc"]**2)  # combined uncertainty of the two RTDs
+        df["RTD_IN_unc"] = 0.15 + 0.002 * df["RTD_IN"]
+        df["RTD_unc"] = np.sqrt(df["RTD_IN_unc"]**2 + df["RTD_OUT_unc"]**2)  # combined uncertainty of the two RTDs
         df["Delta_RTD"] = df["RTD_IN"] - df["RTD_OUT"]
-        df["Rel_unc"] = math.sqrt(0.01**2 + (df["RTD_unc"] / df["Delta_RTD"])**2)  # 0.01 is uncertainty of flow rate
+        df["Rel_unc"] = np.sqrt(0.01**2 + (df["RTD_unc"] / df["Delta_RTD"])**2)  # 0.01 is uncertainty of flow rate
         df["ABS_unc"] = df["Rel_unc"] * df["Q"]  # absolute uncertainty of Q = relative uncertainty of Q * Q value
         
         # writes avg Q uncertainty of the steady state range in the averages column
