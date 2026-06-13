@@ -22,14 +22,17 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
         df["Q"] = df["rho_in"] * df["v_dot (m3/s)"] * (df["h_in"] - df["h_out"])
 
         # print row number and Q value for each row to help user choose steady state range
-        """for row_num, row in enumerate(df.itertuples(index=False, name="Row")):
-                print(f"Row {row_num}: Q value {row.Q}")"""
+        for row_num, row in enumerate(df.itertuples(index=False, name="Row")):
+                print(f"Row {row_num}: Q value {row.Q}")
 
-        # OR ALTERNATIVELY, plot Q vs row number to visually identify steady state range
-        fig, ax = plt.subplots(figsize=(10, 4))
+        # plot Q vs row number to visually identify steady state range
+        fig, ax = plt.subplots(figsize=(20, 4))
         scatter = ax.plot(df.index, df["Q"], marker="o", markersize=5)
         ax.set_xlabel("Row")
+        ax.tick_params(axis="x", labelsize=6)
+        ax.set_xticks(np.arange(df.index.min(), df.index.max() + 1, 1))
         ax.set_ylabel("Q (W)")
+        ax.set_yticks(np.arange(df["Q"].min(), df["Q"].max() + 5, 5))
         ax.set_title(f"Q values for {xlsx_path.name} — hover to see values, then close to enter range")
         ax.grid(True)
         # adds hover tooltips showing row number and Q value
@@ -45,11 +48,14 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
         end_idx = int(input(f"Enter the END row number of steady state for {xlsx_path.name}: "))
 
         # show graph again with selected region highlighted
-        fig, ax = plt.subplots(figsize=(10, 4))
+        fig, ax = plt.subplots(figsize=(20, 4))
         scatter = ax.plot(df.index, df["Q"], marker="o", markersize=3)
         ax.axvspan(first_steady_idx, end_idx, color="green", alpha=0.3, label="steady state region")
         ax.set_xlabel("Row")
+        ax.tick_params(axis="x", labelsize=6)
+        ax.set_xticks(np.arange(df.index.min(), df.index.max() + 1, 1))
         ax.set_ylabel("Q (W)")
+        ax.set_yticks(np.arange(df["Q"].min(), df["Q"].max() + 5, 5))
         ax.set_title(f"Q values for {xlsx_path.name} — selected steady state region")
         ax.legend()
         ax.grid(True)
