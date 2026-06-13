@@ -72,7 +72,7 @@ print("IDX30 original back analysis complete!")
 
 
 # this section is for the original front
-for i in range (15, 35, 5):
+for i in range (15, 40, 5): # NOTE, I changed the range to 40 because there is a 35gps file in this folder that needs to be analyzed too
     INPUT_FOLDER = Path(f"NURBS IDX30/Final/Front_final_13_2_26/{i}gps")
     OUTPUT_FOLDER = Path(f"NURBS IDX30 PYTHON ANALYSIS/Front_final_13_2_26/{i}gps")
     OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
