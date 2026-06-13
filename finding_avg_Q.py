@@ -1,3 +1,4 @@
+import math
 import CoolProp as cp
 from CoolProp.CoolProp import PropsSI
 import pandas as pd
@@ -56,9 +57,25 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
         df.loc[first_steady_idx:end_idx, "steady_state"] = True
 
         # writes avg Q of the steady state
-        df["avg_Q_steady"] = None
-        df.at[0, "avg_Q_steady"] = avg_Q_steady  
+        df["Averages"] = None
+        df.at[0, "Averages"] = "Average Q (W)"
+        df.at[1, "Averages"] = avg_Q_steady
+        print(f"Average Q for steady state range in {xlsx_path.name}: {avg_Q_steady} W")
+
+        # NOW DO UNCERTAINTY PROPAGATION
+        # 0.15+0.002*RTD_value is the uncertainty of each RTD reading and 0.01 is the uncertainty of the flow rate reading from the datasheets
+        df["RTD_OUT_unc"] = 0.15 + 0.002 * df["RTD_OUT"]
+        df["RTD_unc"] = math.sqrt(df["RTD_IN_unc"]**2 + df["RTD_OUT_unc"]**2)  # combined uncertainty of the two RTDs
+        df["Delta_RTD"] = df["RTD_IN"] - df["RTD_OUT"]
+        df["Rel_unc"] = math.sqrt(0.01**2 + (df["RTD_unc"] / df["Delta_RTD"])**2)  # 0.01 is uncertainty of flow rate
+        df["ABS_unc"] = df["Rel_unc"] * df["Q"]  # absolute uncertainty of Q = relative uncertainty of Q * Q value
         
+        # writes avg Q uncertainty of the steady state range in the averages column
+        avg_Q_steady_unc = df.loc[first_steady_idx:end_idx, "ABS_unc"].mean()
+        df.at[2, "Averages"] = "Average Q Uncertainty (W)"
+        df.at[3, "Averages"] = avg_Q_steady_unc
+        print(f"Average Q uncertainty for steady state range in {xlsx_path.name}: {avg_Q_steady_unc} W")
+
         return df
 
 # this code is so that it runs for all of my files for this section 
@@ -79,8 +96,9 @@ for i in range (15, 35, 5):
        
         # extract velocity number from filename e.g. "3mps.xlsx" → 3
         velocity = int(xlsx_file.stem.replace("mps", ""))
-        avg_Q = result_df.at[0, "avg_Q_steady"]
-        summaries.append({"Velocity (m/s)": velocity, "Q_steady (W)": avg_Q})
+        avg_Q = result_df.at[1, "Averages"]
+        avg_Q_unc = result_df.at[3, "Averages"]
+        summaries.append({"Velocity (m/s)": velocity, "Q_steady (W)": avg_Q, "Q_uncertainty (W)": avg_Q_unc})
 
         output_file = OUTPUT_FOLDER / f"{xlsx_file.stem}_analysis.xlsx"
         result_df.to_excel(output_file, index=False)
