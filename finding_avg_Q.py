@@ -4,6 +4,8 @@ from CoolProp.CoolProp import PropsSI
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
+import mplcursors
+
 
 # atmospheric pressure
 atm_p = 101325 
@@ -20,34 +22,43 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
         df["Q"] = df["rho_in"] * df["v_dot (m3/s)"] * (df["h_in"] - df["h_out"])
 
         # print row number and Q value for each row to help user choose steady state range
-        for row_num, row in enumerate(df.itertuples(index=False, name="Row")):
-                print(f"Row {row_num}: Q value {row.Q}")
+        """for row_num, row in enumerate(df.itertuples(index=False, name="Row")):
+                print(f"Row {row_num}: Q value {row.Q}")"""
 
         # OR ALTERNATIVELY, plot Q vs row number to visually identify steady state range
-        """plt.figure(figsize=(10, 4))
-        plt.plot(df.index, df["Q"], marker="o", markersize=3)
-        plt.xlabel("Row")
-        plt.ylabel("Q (W)")
-        plt.title(f"Q values for {xlsx_path.name}")
-        plt.grid(True)
+        fig, ax = plt.subplots(figsize=(10, 4))
+        scatter = ax.plot(df.index, df["Q"], marker="o", markersize=5)
+        ax.set_xlabel("Row")
+        ax.set_ylabel("Q (W)")
+        ax.set_title(f"Q values for {xlsx_path.name} — hover to see values, then close to enter range")
+        ax.grid(True)
+        # adds hover tooltips showing row number and Q value
+        cursor = mplcursors.cursor(scatter, hover=True)
+        cursor.connect("add", lambda sel: sel.annotation.set_text(
+                f"Row: {sel.index}\nQ: {sel.target[1]:.2f} W"
+                ))
         plt.tight_layout()
-        plt.show()  # pauses until you close the window"""
+        plt.show()
         
         # have user choose steady state range 
         first_steady_idx = int(input(f"Enter the first row number of the steady state range for {xlsx_path.name}: "))
         end_idx = int(input(f"Enter the END row number of steady state for {xlsx_path.name}: "))
 
         # show graph again with selected region highlighted
-        plt.figure(figsize=(10, 4))
-        plt.plot(df.index, df["Q"], marker="o", markersize=3)
-        plt.axvspan(first_steady_idx, end_idx, color="green", alpha=0.3, label="steady state region")
-        plt.xlabel("Row")
-        plt.ylabel("Q (W)")
-        plt.title(f"Q values for {xlsx_path.name} — selected steady state region")
-        plt.legend()
-        plt.grid(True)
+        fig, ax = plt.subplots(figsize=(10, 4))
+        scatter = ax.plot(df.index, df["Q"], marker="o", markersize=3)
+        ax.axvspan(first_steady_idx, end_idx, color="green", alpha=0.3, label="steady state region")
+        ax.set_xlabel("Row")
+        ax.set_ylabel("Q (W)")
+        ax.set_title(f"Q values for {xlsx_path.name} — selected steady state region")
+        ax.legend()
+        ax.grid(True)
+        cursor = mplcursors.cursor(scatter, hover=True)
+        cursor.connect("add", lambda sel: sel.annotation.set_text(
+                f"Row: {sel.index}\nQ: {sel.target[1]:.2f} W"
+                ))
         plt.tight_layout()
-        plt.show()  # pauses until you close the window
+        plt.show()
 
         # average Q for the steady state range
         avg_Q_steady = df.loc[first_steady_idx:end_idx, "Q"].mean()        

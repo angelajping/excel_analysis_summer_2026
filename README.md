@@ -8,3 +8,5 @@
 # pandas, openpyxl, and xlsxwriter for working with Excel 
 #       pip install pandas openpyxl xlsxwriter
 #       https://pandas.pydata.org/docs/
+
+# pip install mplcursors 
