@@ -2,6 +2,7 @@ import CoolProp as cp
 from CoolProp.CoolProp import PropsSI
 import pandas as pd
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 # atmospheric pressure
 atm_p = 101325 
@@ -17,59 +18,43 @@ def process_file(xlsx_path: Path) -> pd.DataFrame:
         df["h_out"] = df["RTD_OUT"].apply(lambda T: PropsSI("H", "T", T + 273.15, "P", atm_p, "Water"))
         df["Q"] = df["rho_in"] * df["v_dot (m3/s)"] * (df["h_in"] - df["h_out"])
 
-        # CALCULATING STEADY STATE THRESHOLD 
-        STEADY_THRESHOLD = 3         # this is a guess that should probably be tweaked
-        WINDOW = 3
-        rolling_std = df["Q"].rolling(window=WINDOW).std()
-        steady_mask = rolling_std < STEADY_THRESHOLD
+        # print row number and Q value for each row to help user choose steady state range
+        for row_num, row in enumerate(df.itertuples(index=False, name="Row")):
+                print(f"Row {row_num}: Q value {row.Q}")
 
-        # find first TRUE in bottom half, average from there to end
-        halfway = len(df) // 2
-        bottom_half_true = steady_mask[halfway:][steady_mask[halfway:] == True]
-
-        if not bottom_half_true.empty:
-                first_steady_idx = bottom_half_true.index[0]
-                avg_Q_steady = df.loc[first_steady_idx:, "Q"].mean()
-        else:  # no steady rows at all — average everything
-                first_steady_idx = None
-                avg_Q_steady = df["Q"].mean()
-                print(f"  Warning: no steady rows found in {xlsx_path.name} — averaging all rows")
-
-        # for debugging
-        rows_used = f"{first_steady_idx+2} to {len(df)+1}" if first_steady_idx is not None else "all rows"
-        print(
-                f"{i}gps — Steady rows: {steady_mask.sum()} / {len(df)}, "
-                f"Avg Q: {avg_Q_steady:.4f}, "
-                f"Rows used: {rows_used}"
-        )
-
+        # OR ALTERNATIVELY, plot Q vs row number to visually identify steady state range
+        """plt.figure(figsize=(10, 4))
+        plt.plot(df.index, df["Q"], marker="o", markersize=3)
+        plt.xlabel("Row")
+        plt.ylabel("Q (W)")
+        plt.title(f"Q values for {xlsx_path.name}")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()  # pauses until you close the window"""
         
-        # THIS IS THE BACKWARDS UP WAY
-        """
-        end_idx = df.index[-1]
-        start_idx = end_idx
+        # have user choose steady state range 
+        first_steady_idx = int(input(f"Enter the first row number of the steady state range for {xlsx_path.name}: "))
+        end_idx = int(input(f"Enter the END row number of steady state for {xlsx_path.name}: "))
 
-        # while the index is not 0 and the data point is "steady", this loop runs
-        while start_idx >= 0 and steady_mask.loc[start_idx]:
-                start_idx -= 1
-        # to get correct starting index where it is steady, add 1 
-        start_idx += 1
-        # find average Q in the steady state range
-        avg_Q_steady = df.loc[start_idx:end_idx, "Q"].mean()
+        # show graph again with selected region highlighted
+        plt.figure(figsize=(10, 4))
+        plt.plot(df.index, df["Q"], marker="o", markersize=3)
+        plt.axvspan(first_steady_idx, end_idx, color="green", alpha=0.3, label="steady state region")
+        plt.xlabel("Row")
+        plt.ylabel("Q (W)")
+        plt.title(f"Q values for {xlsx_path.name} — selected steady state region")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()  # pauses until you close the window
 
-        # for debugging
-        print(
-                f"{i}gps — Final steady region rows {start_idx+2}:{end_idx+2}, "
-                f"Avg Q: {avg_Q_steady:.4f}"
-        )
-        """
+        # average Q for the steady state range
+        avg_Q_steady = df.loc[first_steady_idx:end_idx, "Q"].mean()        
 
-        # shows the rolling standard deviation of Q, which is used to determine steady state
-        df["rolling_std"] = df["Q"].rolling(window=WINDOW).std()
-        # shows which rows are marked true and false for steady state
+        # showing which rows are in the steady state range
         df["steady_state"] = False
-        df.loc[steady_mask, "steady_state"] = True
-        """df.loc[start_idx:end_idx, "steady_state"] = True # for the backwards up way, this marks the steady state rows as true"""
+        df.loc[first_steady_idx:end_idx, "steady_state"] = True
+
         # writes avg Q of the steady state
         df["avg_Q_steady"] = None
         df.at[0, "avg_Q_steady"] = avg_Q_steady  
